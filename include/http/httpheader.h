@@ -3,21 +3,39 @@
 #pragma once
 
 #include "files/filesystem.h"
+#include <algorithm>
 #include <asio/ip/tcp.hpp>
 
 //! Header for http request
 struct HttpHeader {
-    std::string protocol;
-    filesystem::path location;
+    std::string protocol;      // Could be GET POST etc
+    filesystem::path location; // files location
+    std::string version;
+
+    std::vector<std::pair<std::string, std::string>> attributes;
+
+    std::string get(std::string name, std::string def = {}) {
+        auto it = std::find_if(
+            attributes.begin(), attributes.end(), [&name](const auto &val) {
+                return val.first == name;
+            });
+
+        if (it != attributes.end()) {
+            return it->second;
+        }
+        else {
+            return def;
+        }
+    }
 
     HttpHeader(std::string data) {
+        attributes.reserve(20);
+
         std::istringstream ss(data);
 
         {
             std::string line;
             std::getline(ss, line);
-
-            //            fmt::print("first line: {}\n", line);
 
             std::istringstream liness(line);
 
@@ -25,6 +43,7 @@ struct HttpHeader {
 
             liness >> protocol;
             liness >> location;
+            liness >> version;
 
             if (location.find("..") != std::string::npos) {
                 location = ""; // Should not be possible to exit root folder
@@ -37,8 +56,24 @@ struct HttpHeader {
             this->location = location;
         }
 
-        //        for (std::string line; std::getline(ss, line);) {
-        //            fmt::print("settings: {}\n", line);
-        //        }
+        for (std::string line; std::getline(ss, line);) {
+            if (auto f = line.find(':'); f != std::string::npos) {
+                attributes.emplace_back(line.substr(0, f), line.substr(f + 1));
+            }
+            else {
+                break;
+            }
+        }
+
+        for (auto &attribute : attributes) {
+            while (!attribute.first.empty() &&
+                   isspace(attribute.first.back())) {
+                attribute.first.pop_back();
+            }
+            while (!attribute.second.empty() &&
+                   isspace(attribute.second.front())) {
+                attribute.second.erase(0, 1);
+            }
+        }
     }
 };
