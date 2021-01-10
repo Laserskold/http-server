@@ -6,8 +6,10 @@
 #include <algorithm>
 #include <asio/ip/tcp.hpp>
 
+namespace http {
+
 //! Header for http request
-struct HttpHeader {
+struct RequestHeader {
     std::string protocol;      // Could be GET POST etc
     filesystem::path location; // files location
     std::string version;
@@ -28,7 +30,7 @@ struct HttpHeader {
         }
     }
 
-    HttpHeader(std::string data) {
+    RequestHeader(std::string data) {
         attributes.reserve(20);
 
         std::istringstream ss(data);
@@ -77,3 +79,5 @@ struct HttpHeader {
         }
     }
 };
+
+} // namespace http

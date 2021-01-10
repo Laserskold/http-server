@@ -3,13 +3,17 @@
 
 #include "files/filesystem.h"
 #include "fmt/core.h"
-#include "http/httpheader.h"
+#include "http/requestheader.h"
 #include <asio/io_service.hpp>
 #include <asio/ip/tcp.hpp>
 #include <iostream>
 
-class HttpServer {
+namespace http {
+
+class Server {
 public:
+    using socket = asio::ip::tcp::socket;
+
     void start(unsigned short port = 8080) {
         using asio::ip::tcp;
 
@@ -32,8 +36,8 @@ public:
 
                     socket.read_some(asio::buffer(buffer));
 
-                    auto header =
-                        HttpHeader{std::string{buffer.data(), buffer.size()}};
+                    auto header = RequestHeader{
+                        std::string{buffer.data(), buffer.size()}};
 
                     std::cout << "trying to access " << header.location
                               << std::endl;
@@ -61,10 +65,16 @@ public:
         }
     }
 
-    using FilterT = std::function<bool(const HttpHeader &)>;
-    using ActionT =
-        std::function<void(asio::ip::tcp::socket &socket, const HttpHeader &)>;
+    using FilterT = std::function<bool(const RequestHeader &)>;
+    using ActionT = std::function<void(socket &socket, const RequestHeader &)>;
 
+    //! Example
+    //! server.addFilter(
+    //!     [](const RequestHeader &header) { return header.location ==
+    //!     "./"; },
+    //!     [](Server::socket &socket, const RequestHeader &header) {
+    //!          doStuff(socket, header);
+    //!     });
     void addFilter(FilterT filter, ActionT action) {
         _filters.emplace_back(filter, action);
     }
@@ -78,3 +88,5 @@ private:
 
     ActionT _defaultAction;
 };
+
+} // namespace http
