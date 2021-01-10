@@ -14,7 +14,7 @@ public:
          std::vector<std::pair<std::string, std::string>> attributes = {},
          std::vector<Html> children = {},
          std::string content = {})
-        : tag(tag)
+        : _tag(tag)
         , _attributes(attributes)
         , _children(std::move(children))
         , _content(content)
@@ -29,11 +29,11 @@ public:
 
     //! Constructor but with "named argumnets"
     Html(Args args)
-        : tag(args.tag)
+        : _tag(args.tag)
         , _attributes(std::move(args.attributes))
         , _children(std::move(args.children))
         , _content(std::move(args.content))
-        , _isEmptyType(isEmptyType(tag)) {}
+        , _isEmptyType(isEmptyType(_tag)) {}
 
     void indent(std::ostream &stream, size_t level) const {
         for (size_t i = 0; i < level; ++i) {
@@ -44,7 +44,7 @@ public:
 
     void print(std::ostream &stream, size_t level = 0) const {
         indent(stream, level);
-        fmt::print(stream, "<{}", tag);
+        fmt::print(stream, "<{}", _tag);
 
         for (const auto &attribute : _attributes) {
             fmt::print(stream, " {}=\"{}\"", attribute.first, attribute.second);
@@ -67,7 +67,7 @@ public:
             }
 
             indent(stream, level);
-            fmt::print(stream, "</{}>\n", tag);
+            fmt::print(stream, "</{}>\n", _tag);
         }
     }
 
@@ -85,6 +85,10 @@ public:
         return _isEmptyType;
     }
 
+    Html &addChild(Html html) {
+        _children.push_back(std::move(html));
+    }
+
     auto &children() {
         return _children;
     }
@@ -93,7 +97,19 @@ public:
         return _children;
     }
 
-    std::string tag = "html";
+    //! Add a attribute
+    Html &attribute(std::string name, std::string value) {
+        _attributes.push_back({std::move(name), std::move(value)});
+        return *this;
+    }
+
+    Html &tag(std::string tag) {
+        _tag = tag;
+
+        return *this;
+    }
+
+    std::string _tag = "html";
 
     std::vector<std::pair<std::string, std::string>> _attributes;
     std::vector<Html> _children;
