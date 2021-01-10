@@ -27,7 +27,7 @@ public:
 
         auto s = ss.str();
 
-        socket.write_some(s);
+        socket.write_some(asio::buffer(s));
     }
 
     friend std::ostream &operator<<(std::ostream &stream,
@@ -45,7 +45,7 @@ public:
     }
 
     auto &contentType(std::string value) {
-        attributes.emplace_back("Content-Type", value);
+        attributes.push_back({"Content-Type", value});
         return *this;
     }
 };

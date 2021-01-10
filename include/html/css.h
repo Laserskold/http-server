@@ -12,6 +12,7 @@ struct CssAttribute {
     friend std::ostream &operator<<(std::ostream &stream,
                                     const CssAttribute &attribute) {
         fmt::print(stream, "  {} = {};\n", attribute.name, attribute.value);
+        return stream;
     }
 };
 
@@ -27,6 +28,7 @@ struct CssRule {
         }
 
         stream << "}}\n\n";
+        return stream;
     }
 };
 
@@ -56,5 +58,6 @@ struct CssSheet {
         for (const auto &rule : sheet.rules) {
             stream << rule;
         }
+        return stream;
     }
 };
