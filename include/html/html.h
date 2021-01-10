@@ -4,7 +4,6 @@
 
 #include "fmt/core.h"
 #include "fmt/ostream.h"
-#include "msl/range.h"
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -37,7 +36,7 @@ public:
         , _isEmptyType(isEmptyType(tag)) {}
 
     void indent(std::ostream &stream, size_t level) const {
-        for (auto i : msl::range(level)) {
+        for (size_t i = 0; i < level; ++i) {
             (void)i;
             stream << "  ";
         }

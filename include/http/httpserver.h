@@ -10,13 +10,14 @@
 
 class HttpServer {
 public:
-    void start() {
+    void start(unsigned short port = 8080) {
         using asio::ip::tcp;
 
         try {
             asio::io_service service;
 
-            tcp::acceptor acceptor{service, tcp::endpoint{tcp::v4(), 9042}};
+            auto acceptor =
+                tcp::acceptor{service, tcp::endpoint{tcp::v4(), port}};
 
             while (true) {
                 if (true) {
