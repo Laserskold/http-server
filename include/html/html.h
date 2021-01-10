@@ -72,6 +72,11 @@ public:
         }
     }
 
+    friend std::ostream &operator<<(std::ostream &stream, const Html &html) {
+        html.print(stream);
+        return stream;
+    }
+
     static bool isEmptyType(std::string_view tag) {
         return std::find(emptyTags.begin(), emptyTags.end(), tag) !=
                emptyTags.end();
