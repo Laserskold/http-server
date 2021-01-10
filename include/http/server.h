@@ -75,7 +75,7 @@ public:
     //!     [](Server::socket &socket, const RequestHeader &header) {
     //!          doStuff(socket, header);
     //!     });
-    void addFilter(FilterT filter, ActionT action) {
+    void addAction(FilterT filter, ActionT action) {
         _filters.emplace_back(filter, action);
     }
 
