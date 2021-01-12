@@ -8,32 +8,12 @@
 #include <string>
 #include <vector>
 
-class Html {
-public:
-    Html(std::string tag = "html",
-         std::vector<std::pair<std::string, std::string>> attributes = {},
-         std::vector<Html> children = {},
-         std::string content = {})
-        : _tag(tag)
-        , _attributes(attributes)
-        , _children(std::move(children))
-        , _content(content)
-        , _isEmptyType(isEmptyType(tag)) {}
-
-    struct Args {
-        std::string tag = "html";
-        std::vector<std::pair<std::string, std::string>> attributes = {};
-        std::vector<Html> children = {};
-        std::string content = {};
-    };
-
-    //! Constructor but with "named argumnets"
-    Html(Args args)
-        : _tag(args.tag)
-        , _attributes(std::move(args.attributes))
-        , _children(std::move(args.children))
-        , _content(std::move(args.content))
-        , _isEmptyType(isEmptyType(_tag)) {}
+struct Html {
+    std::string tag = "html";
+    std::vector<std::pair<std::string, std::string>> attributes;
+    std::vector<Html> children;
+    std::string content;
+    bool isEmptyType;
 
     void indent(std::ostream &stream, size_t level) const {
         for (size_t i = 0; i < level; ++i) {
@@ -44,30 +24,30 @@ public:
 
     void print(std::ostream &stream, size_t level = 0) const {
         indent(stream, level);
-        fmt::print(stream, "<{}", _tag);
+        fmt::print(stream, "<{}", tag);
 
-        for (const auto &attribute : _attributes) {
+        for (const auto &attribute : attributes) {
             fmt::print(stream, " {}=\"{}\"", attribute.first, attribute.second);
         }
 
-        if (_isEmptyType) {
+        if (isEmptyType) {
             fmt::print(stream, "/>\n");
         }
         else {
 
-            if (_content.empty()) {
+            if (content.empty()) {
                 fmt::print(stream, ">\n");
             }
             else {
-                fmt::print(stream, ">\n{}\n", _content);
+                fmt::print(stream, ">\n{}\n", content);
             }
 
-            for (const auto &child : _children) {
+            for (const auto &child : children) {
                 child.print(stream, level + 1);
             }
 
             indent(stream, level);
-            fmt::print(stream, "</{}>\n", _tag);
+            fmt::print(stream, "</{}>\n", tag);
         }
     }
 
@@ -76,47 +56,22 @@ public:
         return stream;
     }
 
-    static bool isEmptyType(std::string_view tag) {
+    static bool isSingleton(std::string_view tag) {
         return std::find(emptyTags.begin(), emptyTags.end(), tag) !=
                emptyTags.end();
     }
 
-    bool isEmptyType() {
-        return _isEmptyType;
-    }
-
     Html &addChild(Html html) {
-        _children.push_back(std::move(html));
-    }
-
-    auto &children() {
-        return _children;
-    }
-
-    const auto &children() const {
-        return _children;
+        children.push_back(std::move(html));
     }
 
     //! Add a attribute
     Html &attribute(std::string name, std::string value) {
-        _attributes.push_back({std::move(name), std::move(value)});
+        attributes.push_back({std::move(name), std::move(value)});
         return *this;
     }
 
-    Html &tag(std::string tag) {
-        _tag = tag;
-
-        return *this;
-    }
-
-    std::string _tag = "html";
-
-    std::vector<std::pair<std::string, std::string>> _attributes;
-    std::vector<Html> _children;
-    std::string _content;
-    bool _isEmptyType;
-
-    static constexpr std::array<std::string_view, 14> emptyTags = {
+    static inline constexpr std::array<std::string_view, 14> emptyTags = {
         "area",
         "base",
         "br",
