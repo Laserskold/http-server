@@ -10,10 +10,10 @@
 
 struct Html {
     std::string tag = "html";
-    std::vector<std::pair<std::string, std::string>> attributes;
-    std::vector<Html> children;
-    std::string content;
-    bool isEmptyType;
+    std::vector<std::pair<std::string, std::string>> attributes = {};
+    std::vector<Html> children = {};
+    std::string content = {};
+    bool isEmptyType = false;
 
     void indent(std::ostream &stream, size_t level) const {
         for (size_t i = 0; i < level; ++i) {
@@ -63,6 +63,7 @@ struct Html {
 
     Html &addChild(Html html) {
         children.push_back(std::move(html));
+        return *this;
     }
 
     //! Add a attribute
