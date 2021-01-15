@@ -9,7 +9,7 @@
 #include <vector>
 
 struct Html {
-    std::string tag = "html";
+    std::string tag = "div";
     std::vector<std::pair<std::string, std::string>> attributes = {};
     std::vector<Html> children = {};
     std::string content = {};
