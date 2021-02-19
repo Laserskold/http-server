@@ -1,11 +1,12 @@
 // Copyright Mattias Larsson SKöld 2020
 #pragma once
 
-#include "files/filesystem.h"
-#include "fmt/core.h"
+#include "../common/filesystem.h"
 #include "http/requestheader.h"
+#include <asio.hpp>
 #include <asio/io_service.hpp>
 #include <asio/ip/tcp.hpp>
+#include <functional>
 #include <iostream>
 
 namespace http {
@@ -14,62 +15,27 @@ class Server {
 public:
     using socket = asio::ip::tcp::socket;
 
-    void start(unsigned short port = 8080) {
-        using asio::ip::tcp;
-
+    //! Run this to start server
+    void start() {
         try {
-            asio::io_service service;
+            startAccept();
 
-            auto acceptor =
-                tcp::acceptor{service, tcp::endpoint{tcp::v4(), port}};
-
-            while (true) {
-                if (true) {
-                    auto socket = tcp::socket{service};
-                    acceptor.accept(socket);
-
-                    std::cout << "request started" << std::endl;
-
-                    socket.wait(socket.wait_read);
-
-                    std::vector<char> buffer(socket.available());
-
-                    socket.read_some(asio::buffer(buffer));
-
-                    auto header = RequestHeader{
-                        std::string{buffer.data(), buffer.size()}};
-
-                    std::cout << "trying to access " << header.location
-                              << std::endl;
-
-                    bool found = false;
-
-                    for (const auto &filter : _filters) {
-                        if (filter.first(header)) {
-                            filter.second(socket, header);
-                            found = true;
-                            std::cout << "request finished" << std::endl;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        std::cout << "doing default action\n";
-                        _defaultAction(socket, header);
-                    }
-                }
-            }
+            _service.run();
         }
         catch (std::exception &e) {
             std::cerr << e.what() << "\n";
         }
     }
 
+    Server(unsigned short port = 8080)
+        : _acceptor(_service,
+                    asio::ip::tcp::endpoint{asio::ip::tcp::v4(), port}) {}
+
     using FilterT = std::function<bool(const RequestHeader &)>;
     using ActionT = std::function<void(socket &socket, const RequestHeader &)>;
 
     //! Example
-    //! server.addFilter(
+    //! server.addAction(
     //!     [](const RequestHeader &header) { return header.location ==
     //!     "./"; },
     //!     [](Server::socket &socket, const RequestHeader &header) {
@@ -84,9 +50,84 @@ public:
     }
 
 private:
+    void handleRequest(socket &socket,
+                       asio::error_code ec,
+                       const std::string_view data);
+
+    void handleAccept(std::shared_ptr<socket> socket);
+
+    void startAccept();
+
     std::vector<std::pair<FilterT, ActionT>> _filters;
 
     ActionT _defaultAction;
+    asio::io_service _service;
+    asio::ip::tcp::acceptor _acceptor = asio::ip::tcp::acceptor{_service};
 };
+
+// Internal functions ---------------------------------
+
+void Server::handleRequest(Server::socket &socket,
+                           asio::error_code ec,
+                           const std::string_view data) {
+    if (ec) {
+        return;
+    }
+
+    auto header = RequestHeader{std::string{data.data(), data.size()}};
+
+    std::cout << "trying to access " << header.location << std::endl;
+
+    bool found = false;
+
+    for (const auto &filter : _filters) {
+        if (filter.first(header)) {
+            filter.second(socket, header);
+            found = true;
+            std::cout << "request finished" << std::endl;
+            break;
+        }
+    }
+
+    if (!found) {
+        std::cout << "doing default action\n";
+        if (_defaultAction) {
+            _defaultAction(socket, header);
+        }
+        else {
+            constexpr auto requestHeader = std::string_view{
+                "HTTP/1.1 404 OK\r\n"
+                "Content-Type: text/html; charset=\"UTF-8\"\r\n"
+                "Connection: Keep-Alive\r\n"
+                "\r\n"};
+
+            socket.write_some(
+                asio::buffer(requestHeader.begin(), requestHeader.size()));
+        }
+    }
+}
+
+void Server::handleAccept(std::shared_ptr<Server::socket> socket) {
+    std::cout << "request started" << std::endl;
+    auto data = std::make_shared<std::array<char, 1024 * 8>>();
+
+    socket->async_read_some(
+        asio::buffer(data->begin(), data->size()),
+        [this, socket, data](asio::error_code ec, size_t bytes) {
+            handleRequest(*socket, ec, std::string_view{data->data(), bytes});
+        });
+
+    startAccept();
+}
+
+void Server::startAccept() {
+    auto socket = std::make_shared<asio::ip::tcp::socket>(_service);
+    _acceptor.async_accept(*socket, [socket, this](asio::error_code ec) {
+        if (ec) {
+            std::cerr << "accept error\n";
+        }
+        handleAccept(socket);
+    });
+}
 
 } // namespace http
