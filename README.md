@@ -30,18 +30,12 @@ int main(int, char *[]) {
         });
 
     // Define what to do when other actions does not match
-    server.defaultAction([](Server::socket &socket,
-                            const RequestHeader &header) {
-        constexpr auto requestHeader =
-            std::string_view{"HTTP/1.1 404 OK\r\n"
-                             "Content-Type: text/html; charset=\"UTF-8\"\r\n"
-                             "Connection: Keep-Alive\r\n"
-                             "\r\n"
-                             "Not supported file format :/"};
-
-        socket.write_some(
-            asio::buffer(requestHeader.begin(), requestHeader.size()));
-    });
+    server.defaultAction(
+        [](Server::socket &socket, const RequestHeader &header) {
+            auto responseHeader = ResponseHeader{};
+            responseHeader.status = "404 Not supported file format :/";
+            responseHeader.write(socket);
+        });
 
     std::cout << "running server on port 8080\n"
                  "try opening browser at\n"
