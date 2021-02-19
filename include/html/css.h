@@ -1,7 +1,6 @@
 #pragma once
 
-#include <fmt/core.h>
-#include <fmt/ostream.h>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -11,7 +10,7 @@ struct CssAttribute {
 
     friend std::ostream &operator<<(std::ostream &stream,
                                     const CssAttribute &attribute) {
-        fmt::print(stream, "  {} = {};\n", attribute.name, attribute.value);
+        stream << "  " << attribute.name << " = " << attribute.value << ";\n";
         return stream;
     }
 };
@@ -21,7 +20,7 @@ struct CssRule {
     std::vector<CssAttribute> attributes;
 
     friend std::ostream &operator<<(std::ostream &stream, const CssRule &rule) {
-        fmt::print(stream, "{}\{{\n", rule.name);
+        stream << rule.name << "\{{\n";
 
         for (const auto &attribute : rule.attributes) {
             stream << attribute;

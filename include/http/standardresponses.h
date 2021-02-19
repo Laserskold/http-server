@@ -1,7 +1,6 @@
 #pragma once
 
-#include "files/filesystem.h"
-#include "fmt/core.h"
+#include "../common/filesystem.h"
 #include "http/responseheader.h"
 #include <asio/ip/tcp.hpp>
 #include <fstream>
@@ -11,7 +10,7 @@ namespace http {
 void sendFileNotFound(asio::ip::tcp::socket &socket, filesystem::path path) {
     ResponseHeader{}.contentType("text/html; charset=\"UTF-8\"").write(socket);
 
-    socket.write_some(asio::buffer(fmt::format("file not found")));
+    socket.write_some(asio::buffer("file not found"));
 }
 
 //! Send file with the right header

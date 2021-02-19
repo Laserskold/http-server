@@ -1,6 +1,5 @@
 #pragma once
 
-#include "fmt/ostream.h"
 #include <asio/ip/tcp.hpp>
 #include <sstream>
 #include <string>
@@ -33,10 +32,10 @@ public:
     friend std::ostream &operator<<(std::ostream &stream,
                                     const ResponseHeader &header) {
 
-        fmt::print(stream, "{} {}\n", header.httpVersion, header.status);
+        stream << header.httpVersion << " " << header.status << "\n";
 
         for (const auto &attr : header.attributes) {
-            fmt::print(stream, "{}: {}\n", attr.name, attr.value);
+            stream << attr.name << ": " << attr.value << "\n";
         }
 
         stream << "\n";
