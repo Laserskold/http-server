@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "fmt/core.h"
-#include "fmt/ostream.h"
 #include <algorithm>
+#include <array>
+#include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 struct Html {
@@ -24,22 +25,23 @@ struct Html {
 
     void print(std::ostream &stream, size_t level = 0) const {
         indent(stream, level);
-        fmt::print(stream, "<{}", tag);
+        stream << "<" << tag;
 
         for (const auto &attribute : attributes) {
-            fmt::print(stream, " {}=\"{}\"", attribute.first, attribute.second);
+            stream << " " << attribute.first << "=\"" << attribute.second
+                   << "\"";
         }
 
         if (isEmptyType) {
-            fmt::print(stream, "/>\n");
+            stream << "/>\n";
         }
         else {
 
             if (content.empty()) {
-                fmt::print(stream, ">\n");
+                stream << ">\n";
             }
             else {
-                fmt::print(stream, ">\n{}\n", content);
+                stream << ">\n" << content << "\n";
             }
 
             for (const auto &child : children) {
@@ -47,7 +49,7 @@ struct Html {
             }
 
             indent(stream, level);
-            fmt::print(stream, "</{}>\n", tag);
+            stream << "</" << tag << ">\n";
         }
     }
 

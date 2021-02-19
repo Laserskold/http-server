@@ -1,0 +1,9 @@
+*.cflags
+*.config
+*.creator
+*.cxxflags
+*.files
+*.includes
+*.user
+
+*_example
