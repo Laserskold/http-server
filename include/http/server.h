@@ -23,7 +23,9 @@ public:
             _service.run();
         }
         catch (std::exception &e) {
-            std::cerr << e.what() << "\n";
+            if (_error) {
+                *_error << e.what() << "\n";
+            }
         }
     }
 
@@ -49,6 +51,17 @@ public:
         _defaultAction = action;
     }
 
+    void log(std::ostream &log, std::ostream &error) {
+        _log = &log;
+        _error = &error;
+    }
+
+    //! Disable log output
+    void resetLog() {
+        _log = nullptr;
+        _error = nullptr;
+    }
+
 private:
     void handleRequest(socket &socket,
                        asio::error_code ec,
@@ -63,6 +76,8 @@ private:
     ActionT _defaultAction;
     asio::io_service _service;
     asio::ip::tcp::acceptor _acceptor = asio::ip::tcp::acceptor{_service};
+    std::ostream *_log = nullptr;
+    std::ostream *_error = &std::cerr;
 };
 
 // Internal functions ---------------------------------
@@ -76,7 +91,9 @@ void Server::handleRequest(Server::socket &socket,
 
     auto header = RequestHeader{std::string{data.data(), data.size()}};
 
-    std::cout << "trying to access " << header.location << std::endl;
+    if (_log) {
+        *_log << "trying to access " << header.location << std::endl;
+    }
 
     bool found = false;
 
@@ -84,13 +101,17 @@ void Server::handleRequest(Server::socket &socket,
         if (filter.first(header)) {
             filter.second(socket, header);
             found = true;
-            std::cout << "request finished" << std::endl;
+            if (_log) {
+                *_log << "request finished" << std::endl;
+            }
             break;
         }
     }
 
     if (!found) {
-        std::cout << "doing default action\n";
+        if (_log) {
+            *_log << "doing default action\n";
+        }
         if (_defaultAction) {
             _defaultAction(socket, header);
         }
@@ -108,7 +129,9 @@ void Server::handleRequest(Server::socket &socket,
 }
 
 void Server::handleAccept(std::shared_ptr<Server::socket> socket) {
-    std::cout << "request started" << std::endl;
+    if (_log) {
+        *_log << "request started" << std::endl;
+    }
     auto data = std::make_shared<std::array<char, 1024 * 8>>();
 
     socket->async_read_some(
@@ -124,7 +147,9 @@ void Server::startAccept() {
     auto socket = std::make_shared<asio::ip::tcp::socket>(_service);
     _acceptor.async_accept(*socket, [socket, this](asio::error_code ec) {
         if (ec) {
-            std::cerr << "accept error\n";
+            if (_error) {
+                *_error << "accept error\n";
+            }
         }
         handleAccept(socket);
     });
